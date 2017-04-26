@@ -957,6 +957,21 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                 // we've reconnected
                 _disconnected1100Fired = false;
                 OnMessage(BrokerageMessageEvent.Reconnected(errorMsg));
+
+                // if we reconnected after a disconnect due to IB daily server reset, force a manual disconnect and connect
+                if (IsWithinScheduledServerResetTimes())
+                {
+                    OnMessage(new BrokerageMessageEvent(brokerageMessageType, errorCode, errorMsg));
+
+                    Log.Trace("InteractiveBrokersBrokerage.HandleError(): Reconnected during server reset times.");
+                    Log.Trace("InteractiveBrokersBrokerage.HandleError(): Disconnecting...");
+                    Disconnect();
+
+                    Log.Trace("InteractiveBrokersBrokerage.HandleError(): Reconnecting...");
+                    Connect();
+
+                    return;
+                }
             }
             else if (errorCode == 506)
             {
@@ -1749,7 +1764,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         {
             bool result;
             var time = DateTime.UtcNow.ConvertFromUtc(TimeZones.NewYork);
-            
+
             // don't kill algos on Saturdays if we don't have a connection
             if (time.DayOfWeek == DayOfWeek.Saturday)
             {
@@ -1762,7 +1777,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                 result = timeOfDay > new TimeSpan(23, 0, 0) || timeOfDay < new TimeSpan(1, 30, 0);
             }
 
-            Log.Trace("InteractiveBrokersBrokerage.IsWithinScheduledServerRestTimes(): " + result);
+            Log.Trace("InteractiveBrokersBrokerage.IsWithinScheduledServerResetTimes(): " + result);
 
             return result;
         }
