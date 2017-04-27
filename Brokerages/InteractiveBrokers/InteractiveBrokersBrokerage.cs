@@ -958,20 +958,17 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                 _disconnected1100Fired = false;
                 OnMessage(BrokerageMessageEvent.Reconnected(errorMsg));
 
-                // if we reconnected after a disconnect due to IB daily server reset, force a manual disconnect and connect
-                if (IsWithinScheduledServerResetTimes())
-                {
-                    OnMessage(new BrokerageMessageEvent(brokerageMessageType, errorCode, errorMsg));
+                // with IB Gateway v960.2a in the cloud, we are not receiving order fill events after a reconnect,
+                // force a manual disconnect and connect
+                OnMessage(new BrokerageMessageEvent(brokerageMessageType, errorCode, errorMsg));
 
-                    Log.Trace("InteractiveBrokersBrokerage.HandleError(): Reconnected during server reset times.");
-                    Log.Trace("InteractiveBrokersBrokerage.HandleError(): Disconnecting...");
-                    Disconnect();
+                Log.Trace("InteractiveBrokersBrokerage.HandleError(): Disconnecting...");
+                Disconnect();
 
-                    Log.Trace("InteractiveBrokersBrokerage.HandleError(): Reconnecting...");
-                    Connect();
+                Log.Trace("InteractiveBrokersBrokerage.HandleError(): Reconnecting...");
+                Connect();
 
-                    return;
-                }
+                return;
             }
             else if (errorCode == 506)
             {
